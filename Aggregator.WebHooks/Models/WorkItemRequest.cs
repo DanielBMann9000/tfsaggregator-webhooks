@@ -1,8 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using Aggregator.Core.Interfaces;
 
 namespace Aggregator.WebHooks.Models
@@ -66,30 +62,37 @@ namespace Aggregator.WebHooks.Models
                     }
                 }
 
-                string fullUrl = (string)payload["resource"]["url"];
-                result.TfsCollectionUri = fullUrl.Substring(0, fullUrl.IndexOf("_apis"));
+                if (payload.Property("resourceContainers") == null)
+                {
+                    string fullUrl = (string)payload["resource"]["url"];
+                    result.TfsCollectionUri = fullUrl.Substring(0, fullUrl.IndexOf("_apis"));
+                }
+                else
+                {
+                    result.TfsCollectionUri = (string)payload["resourceContainers"]["collection"]["baseUrl"];
+                }
 
                 switch (result.EventType)
                 {
                     case "workitem.created":
                         result.WorkItemId = (int)payload["resource"]["id"];
                         result.TeamProject = (string)payload["resource"]["fields"]["System.TeamProject"];
-                        result.ChangeType = Core.Interfaces.ChangeTypes.New;
+                        result.ChangeType = ChangeTypes.New;
                         break;
                     case "workitem.updated":
                         result.WorkItemId = (int)payload["resource"]["workItemId"];
                         result.TeamProject = (string)payload["resource"]["revision"]["fields"]["System.TeamProject"];
-                        result.ChangeType = Core.Interfaces.ChangeTypes.Change;
+                        result.ChangeType = ChangeTypes.Change;
                         break;
                     case "workitem.restored":
                         result.WorkItemId = (int)payload["resource"]["id"];
                         result.TeamProject = (string)payload["resource"]["fields"]["System.TeamProject"];
-                        result.ChangeType = Core.Interfaces.ChangeTypes.Restore;
+                        result.ChangeType = ChangeTypes.Restore;
                         break;
                     case "workitem.deleted":
                         result.WorkItemId = (int)payload["resource"]["id"];
                         result.TeamProject = (string)payload["resource"]["fields"]["System.TeamProject"];
-                        result.ChangeType = Core.Interfaces.ChangeTypes.Delete;
+                        result.ChangeType = ChangeTypes.Delete;
                         break;
                     default:
                         result.Error = $"Unsupported eventType {result.EventType}";
